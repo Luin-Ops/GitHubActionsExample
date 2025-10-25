@@ -1,4 +1,4 @@
-name: CI
+name: CI with Matrix Strategy
 
 on:
   push:
@@ -7,23 +7,62 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11, 3.12]
+      fail-fast: false # continue running tests even if some fail.
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
-      - name: Build Docker image
-        run: docker build -t hello-python .
+      - name: Install dependencies
+        run:
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run application and test HTTP response
-        run: 
-          docker run -d --name test-container -p 8000:8000 hello-python &&
-          sleep 10 &&
+      - name: Run tests
+        run: pytest test_app.py -v
+
+      - name: Test App Manually
+        run:
+          python app.py &
+          sleep 10
           curl -f http://localhost:8000
-          
-      - name: Stop container
-        run: docker stop test-container && docker rm test-container
+          curl -f http://localhost:8000/health
+          curl -f http://localhost:8000/api/info
+          curl -f http://localhost:8000/api/multiply/2/3
+          pkill -f "python app.py"
+
+  build:
+        needs: test
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            python-version: [3.11, 3.12]
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v4
+
+        - name: Build Docker image for Python ${{ matrix.python-version }}
+          run: docker build --build-arg PYTHON_VERSION=${{ matrix.python-version }} -t hello-flask:${{ matrix.python-version }} .
+
+        - name: Test Docker Container
+          run: 
+            docker run -d --name test-container-${{ matrix.python-version }} -p 800${{ strategy.job-index}}:8000 hello-flask:${{ matrix.python-version }}
+            sleep 10
+            curl -f http://localhost:800${{ strategy.job-index }}/health
+            
+        - name: Stop container
+          run: docker stop test-container-${{ matrix.python-version }} && docker rm test-container-${{ matrix.python-version }}
