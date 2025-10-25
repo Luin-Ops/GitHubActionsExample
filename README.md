@@ -1,3 +1,5 @@
+[![CI](https://github.com/Luin-Ops/GitHubActionsExample/actions/workflows/ci.yml/badge.svg)](https://github.com/Luin-Ops/GitHubActionsExample/actions)
+
 # Flask Matrix Calculator
 
 A simple Flask web application that provides basic mathematical operations through a REST API, with a focus on multiplication operations. The application is containerized using Docker and includes comprehensive CI/CD workflows using GitHub Actions.
