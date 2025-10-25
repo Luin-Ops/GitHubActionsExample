@@ -81,7 +81,7 @@ jobs:
             mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
         - name: Test Docker Container
-          run: 
+          run: |
             docker run -d --name test-container-${{ matrix.python-version }} \
                       -p 800${{ strategy.job-index}}:8000 \
                       -e PYTHON_VERSION=${{ matrix.python-version }} \
