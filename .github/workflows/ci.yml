@@ -80,3 +80,25 @@ jobs:
           run: |
             docker stop test-container-${{ matrix.python-version }}
             docker rm test-container-${{ matrix.python-version }}
+
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ["staging", "production"]
+    environment: ${{ matrix.environment }}
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Display Environment
+        run: |
+          echo "Deploying to ${{ matrix.environment }} environment"
+
+      # Simulating deployment
+      - name: Deploy to ${{ matrix.environment }}
+        run: |
+          echo "Deployed to ${{ matrix.environment }} environment successfully"
