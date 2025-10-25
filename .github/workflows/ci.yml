@@ -60,9 +60,12 @@ jobs:
           with:
             context: .
             build-args: PYTHON_VERSION=${{ matrix.python-version }}
-            tags: hello-flask:${{ matrix.python-version }}
-            push: false
+            push: true
             load: true
+            registry: docker.io
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+            tags: ${{ secrets.DOCKER_USERNAME }}/hello-flask:py${{ matrix.python-version }}
             cache-from: type=gha
             cache-to: type=gha,mode=max
 
@@ -71,7 +74,7 @@ jobs:
             docker run -d --name test-container-${{ matrix.python-version }} \
                       -p 800${{ strategy.job-index}}:8000 \
                       -e PYTHON_VERSION=${{ matrix.python-version }} \
-                      hello-flask:${{ matrix.python-version }}
+                      ${{ secrets.DOCKER_USERNAME }}/hello-flask:py${{ matrix.python-version }}
             sleep 10
             curl -f http://localhost:800${{ strategy.job-index }}/health
             curl -f http://localhost:800${{ strategy.job-index }}/api/info
@@ -95,7 +98,7 @@ jobs:
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: hello-flask:${{ matrix.python-version }}
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/hello-flask:py${{ matrix.python-version }}
           format: "sarif"
           output: "trivy-report-${{ matrix.python-version }}.sarif"
 
@@ -107,7 +110,7 @@ jobs:
 
   # Deploy the application to the specified environment
   deploy:
-    needs: build
+    needs: security-scan
     runs-on: ubuntu-latest
     strategy:
       matrix:
