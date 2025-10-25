@@ -32,7 +32,7 @@ jobs:
         run: pytest test_app.py -v
 
       - name: Test App Manually
-        run:
+        run: |
           python app.py &
           sleep 10
           curl -f http://localhost:8000
