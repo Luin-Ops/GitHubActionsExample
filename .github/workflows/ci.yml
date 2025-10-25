@@ -81,7 +81,31 @@ jobs:
             docker stop test-container-${{ matrix.python-version }}
             docker rm test-container-${{ matrix.python-version }}
 
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: hello-flask:${{ matrix.python-version }}
+          format: "sarif"
+          output: "trivy-report-${{ matrix.python-version }}.sarif"
+
+      - name: Upload Trivy report
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-report-${{ matrix.python-version }}.sarif"
+
+  # Deploy the application to the specified environment
   deploy:
     needs: build
     runs-on: ubuntu-latest
