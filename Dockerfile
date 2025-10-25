@@ -2,7 +2,7 @@ ARG PYTHON_VERSION=3.11
 
 # Stage 1: Build the dependencies
 
-FROM python:${PYTHON_VERSION}-slim as builder
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /app
 
