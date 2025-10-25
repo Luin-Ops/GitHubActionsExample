@@ -46,7 +46,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
           matrix:
-            python-version: [3.11, 3.12]
+            python-version: ["3.11", "3.12"]
 
         steps:
         - name: Checkout code
@@ -55,14 +55,42 @@ jobs:
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
 
+        - name: Cache Buildx Cache
+          uses: actions/cache@v3
+          with:
+            path: /tmp/.buildx-cache
+            key: ${{ runner.os }}-buildx-${{ matrix.python-version }}-${{ hashFiles('Dockerfile', 'requirements.txt') }}
+            restore-keys: |
+              ${{ runner.os }}-buildx-${{ matrix.python-version }}-
+              ${{ runner.os }}-buildx-
+
         - name: Build Docker image for Python ${{ matrix.python-version }}
-          run: docker build --build-arg PYTHON_VERSION=${{ matrix.python-version }} -t hello-flask:${{ matrix.python-version }} .
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            build-args: PYTHON_VERSION=${{ matrix.python-version }}
+            tags: hello-flask:${{ matrix.python-version }}
+            push: false
+            load: true
+            cache-from: type=local,src=/tmp/.buildx-cache
+            cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+        - name: Move Buildx Cache
+          run: |
+            rm -rf /tmp/.buildx-cache
+            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
         - name: Test Docker Container
           run: 
-            docker run -d --name test-container-${{ matrix.python-version }} -p 800${{ strategy.job-index}}:8000 hello-flask:${{ matrix.python-version }}
+            docker run -d --name test-container-${{ matrix.python-version }} \
+                      -p 800${{ strategy.job-index}}:8000 \
+                      -e PYTHON_VERSION=${{ matrix.python-version }} \
+                      hello-flask:${{ matrix.python-version }}
             sleep 10
             curl -f http://localhost:800${{ strategy.job-index }}/health
-            
+            curl -f http://localhost:800${{ strategy.job-index }}/api/info
+
         - name: Stop container
-          run: docker stop test-container-${{ matrix.python-version }} && docker rm test-container-${{ matrix.python-version }}
+          run: |
+            docker stop test-container-${{ matrix.python-version }}
+            docker rm test-container-${{ matrix.python-version }}
