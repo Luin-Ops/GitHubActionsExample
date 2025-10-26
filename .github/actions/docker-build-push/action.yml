@@ -21,6 +21,7 @@ runs:
     with:
       username: ${{ inputs.docker-username }}
       password: ${{ inputs.docker-password }}
+      registry: docker.io
 
   - name: Set up Docker Buildx
     uses: docker/setup-buildx-action@v3
@@ -32,9 +33,6 @@ runs:
       build-args: PYTHON_VERSION=${{ inputs.python-version }}
       push: true
       load: true
-      registry: docker.io
-      username: ${{ inputs.docker-username }}
-      password: ${{ inputs.docker-password }}
       tags: ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
       cache-from: type=gha
       cache-to: type=gha,mode=max
