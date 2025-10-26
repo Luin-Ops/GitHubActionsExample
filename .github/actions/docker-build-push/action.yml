@@ -35,7 +35,7 @@ runs:
       registry: docker.io
       username: ${{ inputs.docker-username }}
       password: ${{ inputs.docker-password }}
-      tags: ${{ secrets.DOCKER_USERNAME }}/hello-flask:py${{ inputs.python-version }}
+      tags: ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
       cache-from: type=gha
       cache-to: type=gha,mode=max
 
@@ -44,7 +44,7 @@ runs:
       docker run -d --name test-container-${{ inputs.python-version }} \
                 -p 800${{ strategy.job-index}}:8000 \
                 -e PYTHON_VERSION=${{ inputs.python-version }} \
-                ${{ secrets.DOCKER_USERNAME }}/hello-flask:py${{ inputs.python-version }}
+                ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
       sleep 10
       curl -f http://localhost:800${{ strategy.job-index }}/health
       curl -f http://localhost:800${{ strategy.job-index }}/api/info
