@@ -42,10 +42,10 @@ runs:
       sleep 10
       curl -f http://localhost:800${{ strategy.job-index }}/health
       curl -f http://localhost:800${{ strategy.job-index }}/api/info
-      shell: bash
+    shell: bash
 
   - name: Stop container
     run: |
       docker stop test-container-${{ inputs.python-version }}
       docker rm test-container-${{ inputs.python-version }}
-      shell: bash
+    shell: bash
