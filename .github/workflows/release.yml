@@ -33,6 +33,8 @@ jobs:
             - uses: ./.github/actions/docker-build-push
               with:
                 python-version: ${{ matrix.python-version }}
+                docker-username: ${{ secrets.DOCKER_USERNAME }}
+                docker-password: ${{ secrets.DOCKER_PASSWORD }}
 
     security-scan:
         needs: build
@@ -45,7 +47,9 @@ jobs:
             - uses: ./.github/actions/trivy-scan-upload
               with:
                 python-version: ${{ matrix.python-version }}
-
+                docker-username: ${{ secrets.DOCKER_USERNAME }}
+                docker-password: ${{ secrets.DOCKER_PASSWORD }}
+                
     deploy:
         needs: security-scan
         runs-on: ubuntu-latest
