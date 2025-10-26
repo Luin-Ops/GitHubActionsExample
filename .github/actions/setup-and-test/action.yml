@@ -1,5 +1,5 @@
-name: Build and Test
-description: Build and test the application
+name: Setup and Test
+description: Setup the environment and test the application including manual endpoint testing
 
 inputs:
   python-version:
@@ -19,9 +19,11 @@ runs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        shell: bash
 
     - name: Run tests
       run: pytest test_app.py -v
+      shell: bash
 
     - name: Manual Endpoint Testing
       run: |
@@ -32,3 +34,4 @@ runs:
         curl -f http://localhost:8000/api/info
         curl -f http://localhost:8000/api/multiply/2/3
         pkill -f "python app.py"
+      shell: bash
