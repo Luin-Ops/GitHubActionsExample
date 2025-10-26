@@ -2,13 +2,12 @@ name: Continuous Integration Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ dev ]
 
 permissions:
   contents: read
-  packages: write
   security-events: write
 
 jobs:
@@ -24,31 +23,12 @@ jobs:
               with:
                 python-version: ${{ matrix.python-version }}
 
-    build:
+    security-scan:
         needs: test
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ["3.11", "3.12"]
         steps:
             - uses: actions/checkout@v4
-            - uses: ./.github/actions/docker-build-push
+            - name: CodeQL Scan
+              uses: github/codeql-action/analyze@v3
               with:
-                python-version: ${{ matrix.python-version }}
-                docker-username: ${{ secrets.DOCKER_USERNAME }}
-                docker-password: ${{ secrets.DOCKER_PASSWORD }}
-
-    security-scan:
-        needs: build
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ["3.11", "3.12"]
-        steps:
-            - uses: actions/checkout@v4
-            - uses: ./.github/actions/trivy-scan-upload
-              with:
-                python-version: ${{ matrix.python-version }}
-                docker-username: ${{ secrets.DOCKER_USERNAME }}
-                docker-password: ${{ secrets.DOCKER_PASSWORD }}
-                
+                category: "/language:python"

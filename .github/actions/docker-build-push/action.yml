@@ -10,7 +10,14 @@ inputs:
     required: true
   docker-password:
     description: The Docker password to use
-    required: true  
+    required: true
+  expose-port:
+    description: The port to expose for container testing
+    required: false
+    default: 8000
+  tag:
+    description: The tag to use for the Docker image
+    required: true
 
 runs:
   using: "composite"
@@ -33,19 +40,19 @@ runs:
       build-args: PYTHON_VERSION=${{ inputs.python-version }}
       push: true
       load: true
-      tags: ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
+      tags: ${{ inputs.docker-username }}/hello-flask:${{ inputs.tag }}-py${{ matrix.python-version }}
       cache-from: type=gha
       cache-to: type=gha,mode=max
 
   - name: Test the Docker container
     run: |
       docker run -d --name test-container-${{ inputs.python-version }} \
-                -p 800${{ strategy.job-index}}:8000 \
-                -e PYTHON_VERSION=${{ inputs.python-version }} \
-                ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
+                 -p 800${{ inputs.expose-port }}:${{ inputs.expose-port }} \
+                 -e PYTHON_VERSION=${{ inputs.python-version }} \
+                ${{ inputs.docker-username }}/hello-flask:${{ inputs.tag }}-py${{ inputs.python-version }}
       sleep 10
-      curl -f http://localhost:800${{ strategy.job-index }}/health
-      curl -f http://localhost:800${{ strategy.job-index }}/api/info
+      curl -f http://localhost:800${{ inputs.expose-port }}/health
+      curl -f http://localhost:800${{ inputs.expose-port }}/api/info
     shell: bash
 
   - name: Stop container

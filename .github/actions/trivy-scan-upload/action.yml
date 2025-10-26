@@ -11,6 +11,9 @@ inputs:
   docker-password:
     description: The Docker password to use
     required: true
+  tag:
+    description: The tag to use for the Docker image
+    required: true
 
 runs:
   using: "composite"
@@ -18,7 +21,7 @@ runs:
     - name: Run Trivy vulnerability scan
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ${{ inputs.docker-username }}/hello-flask:py${{ inputs.python-version }}
+        image-ref: ${{ inputs.docker-username }}/hello-flask:${{ inputs.tag }}-py${{ inputs.python-version }}
         format: "sarif"
         output: "trivy-report-${{ inputs.python-version }}.sarif"
 

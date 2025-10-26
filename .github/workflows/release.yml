@@ -6,42 +6,44 @@ on:
 
 permissions:
   contents: read
-  packages: write
   security-events: write
 
 jobs:
     test:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                python-version: ["3.11", "3.12"]
-            fail-fast: false # continue running tests even if some fail.
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/setup-and-test
               with:
-                python-version: ${{ matrix.python-version }}
+                python-version: '3.12'
 
-    build:
+    docker-build:
         needs: test
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ["3.11", "3.12"]
+                python-version: ['3.11', '3.12']
+                expose-port: [8001, 8002]
+                tag: ['staging', 'production']
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/docker-build-push
               with:
                 python-version: ${{ matrix.python-version }}
+                expose-port: ${{ matrix.expose-port }}
                 docker-username: ${{ secrets.DOCKER_USERNAME }}
                 docker-password: ${{ secrets.DOCKER_PASSWORD }}
+            - name: Push Docker image
+              run: docker push ${{ secrets.DOCKER_USERNAME }}/hello-flask:${{ matrix.tag }}-py${{ matrix.python-version }}
+              shell: bash
 
     security-scan:
-        needs: build
+        needs: docker-build
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ["3.11", "3.12"]
+                python-version: ['3.11', '3.12']
+                tag: ['staging', 'production']
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/trivy-scan-upload
@@ -49,19 +51,21 @@ jobs:
                 python-version: ${{ matrix.python-version }}
                 docker-username: ${{ secrets.DOCKER_USERNAME }}
                 docker-password: ${{ secrets.DOCKER_PASSWORD }}
-                
+                tag: ${{ matrix.tag }}-py${{ matrix.python-version }}
+
+
     deploy:
         needs: security-scan
         runs-on: ubuntu-latest
         strategy:
             matrix:
                 environment: ["staging", "production"]
+                python-version: ['3.11', '3.12']
         environment: ${{ matrix.environment }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
             - name: Run Deploy to ${{ matrix.environment }}
               run: echo "Deploying to ${{ matrix.environment }} environment"
-            - name: Deploy to ${{ matrix.environment }}
-              run: echo "Deployed to ${{ matrix.environment }} environment successfully"
+            - run: echo "Deploying ${{ secrets.DOCKER_USERNAME }}/hello-flask:${{ matrix.environment }}-py${{ matrix.python-version }} to ${{ matrix.environment }} environment"
                 
